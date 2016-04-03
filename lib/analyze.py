@@ -31,11 +31,12 @@ def run_script(args):
     script.list_run_arns(details)
 
   elif script.args.run_arn:
+    script.connect()
     details = script.get_findings()
     if details:
       results = script.reconcile_findings(details, script.args.run_arn)
 
-      if results: script.print_results(results)
+      if results: script.print_results(results, details)
 
     #script._log("***********************************************************************", priority=True)
     #script._log("* DRY RUN ENABLED. NO CHANGES WILL BE MADE", priority=True)
@@ -48,11 +49,8 @@ def run_script(args):
 class Script(core.ScriptContext):
   def __init__(self, args, parser):
     core.ScriptContext.__init__(self, args, parser)
-    #super(Script, self).__init__(args, parser)
-    self.aws_credentials = None
     self.dsm = None
     self.inspector = None
-
     self.aws_credentials = self._get_aws_credentials()
 
 
@@ -221,6 +219,7 @@ class Script(core.ScriptContext):
               instances[instance_id] = utilities.CoreDict()
               instances[instance_id]['findings'] = []
               instances[instance_id]['cves'] = []
+              instances[instance_id]['non_cves'] = []
               instances[instance_id]['run_arn'] = run_arn
               instances[instance_id]['run'] = details['runs'][run_arn]
               instances[instance_id]['template_arn'] = template_arn
@@ -236,15 +235,22 @@ class Script(core.ScriptContext):
 
           # record any CVEs in the finding
           if finding.has_key('attributes'):
+            is_cve = False
             for kp in finding['attributes']:
               if kp['key'] == 'CVE_ID':
-                instances[instance_id]['cves'].append(kp['value'])
-                cves_in_inspector[kp['value']] = finding
+                if instance_id:
+                  instances[instance_id]['cves'].append(kp['value'])
+                  cves_in_inspector[kp['value']] = finding
+                  is_cve = True
+
+            if not is_cve and instance_id:
+              instances[instance_id]['non_cves'].append(finding)
 
         # for each instance, let's figure out the mitigation for each CVE reported
         for instance_id, instance_details in instances.items():
           results[instance_id] = {
             'cves': {},
+            'other_findings': instance_details['non_cves'] if len(instance_details['non_cves']) > 0 else None,
             'is_active_in_deep_security': True if instance_details['ds_obj'] else False,
             'has_intrusion_prevention_enabled_in_deep_security': True if instance_details['ds_obj'] and instance_details['ds_obj'].overall_intrusion_prevention_status.lower() != 'off' else False,
             'requires_mitigation': False,
@@ -259,40 +265,24 @@ class Script(core.ScriptContext):
                 'mitigation': cves_in_inspector[cve_number]['description'] if cves_in_inspector.has_key(cve_number) else 'http://cve.mitre.org/cgi-bin/cvename.cgi?name={}'.format(cve_number),
               }
 
-          if len(results[instance_id]['cves']) > 0: results[instance_id]['requires_mitigation'] = True
+          if len(results[instance_id]['cves']) > 0 or len(results[instance_id]['other_findings']) > 0: results[instance_id]['requires_mitigation'] = True
 
     return results
 
-  def print_results(self, results):
+  def print_results(self, results, details):
     """
     Print the results for each instance
     """
-    print "\nRUN: {}".format(details['runs'][run_arn]['name'])
-    print "***********************************************************************"
+    if self.args.run_arn:
+      print "\n***********************************************************************"
+      print "* RUN: {}".format(details['runs'][self.args.run_arn]['name'])
+      print "***********************************************************************"
 
-
-    for template_arn, template in details['templates'].items():
-      print template
-      runs = details['runs'].find(template=template_arn)
-      # get the details for this run by instance
-      for run_arn in runs:
-        instances = {}
-        for finding_arn in details['findings'].find(run=run_arn):
-          finding = details['findings'][finding_arn]
-          if not instances.has_key(finding['assetAttributes']['agentId']): instances[finding['assetAttributes']['agentId']] = utilities.CoreDict()
-          instances[finding['assetAttributes']['agentId']][finding_arn] = finding
-
-        print "\nRUN: {}".format(details['runs'][run_arn]['name'])
-        print "***********************************************************************"
-        print "Instance ID\tNum. Findings\tProtected"
-        print "***********************************************************************"
-        for instance_id, findings in instances.items():
-          instance_in_deepsecurity = dsm.computers.find(cloud_instance_id=instance_id)
-          ds_instance_status = False
-          if len(instance_in_deepsecurity) > 0: 
-            ds_instance = dsm.computers[instance_in_deepsecurity[0]]
-            ds_instance_status = True if ds_instance.computer_status_light == 'GREEN' or ds_instance.computer_status_light == 'YELLOW' else False
-
-          print "{}\t{}\t{}".format(instance_id, len(findings), ds_instance_status)
-
-          print details['findings'][u'arn:aws:inspector:us-west-2:518212039223:target/0-cgC3CGEj/template/0-fieTtmzZ/run/0-bXsK8Vbb/finding/0-nlPNDVCg']
+      for instance_id, instance in results.items():
+        print "{} reports:".format(instance_id)
+        if not instance['requires_mitigation']:
+          print "  There are no findings that require mitigation"
+        else:
+          if instance:
+            print "  There are {} findings related to known CVEs".format(len(instance['cves']))
+            print "  ...and {} other findings".format(len(instance['other_findings']))
