@@ -16,8 +16,9 @@ import utilities
 def run_script(args):
   # configure the command line args
   parser = core.get_arg_parser(prog='ds-analyze-findings analyze', add_help=True)
-  parser.add_argument('-l', '--list', action='store_true', required=False, help='List the available Amazon Inspector findings')
-  parser.add_argument('-m', '--mitigate', action='store_true', required=False, help='Mitigate Amazon Inspector findings when possible using Deep Security')
+  parser.add_argument('-l', '--list', action='store_true', required=False, help='List the available Amazon Inspector assessment runs')
+  parser.add_argument('--run-arn', action='store', dest='run_arn', required=False, help='Analyze the findings of this Amazon Inspector assessment run')
+  parser.add_argument('--mitigate', action='store_true', required=False, help='Mitigate Amazon Inspector findings when possible using Deep Security')
   #parser.add_argument('-i', '--id', action='store', dest="ip_list", required=False, help='Specify an IP List by ID within Deep Security as the source for the AWS WAF IP Set')
   
   script = Script(args[1:], parser)
@@ -27,10 +28,14 @@ def run_script(args):
     # List the available findings in Amazon Inspector
     script.connect()
     details = script.get_findings()
-    if details:
-      results = script.reconcile_findings(details)
+    script.list_run_arns(details)
 
-      print results
+  elif script.args.run_arn:
+    details = script.get_findings()
+    if details:
+      results = script.reconcile_findings(details, script.args.run_arn)
+
+      if results: script.print_results(results)
 
     #script._log("***********************************************************************", priority=True)
     #script._log("* DRY RUN ENABLED. NO CHANGES WILL BE MADE", priority=True)
@@ -165,7 +170,20 @@ class Script(core.ScriptContext):
 
     return results
 
-  def reconcile_findings(self, details):
+  def list_run_arns(self, details):
+    """
+    List the available Amazon Inspector assessment runs
+    """
+    print ""
+    print "***********************************************************************"
+    print "* Available Amazon Inspector assessment runs"
+    print "***********************************************************************"
+    for run_arn, run in details['runs'].items():
+      print "{} completed at {}\n  {}\n".format(run['name'], run['completedAt'].strftime('%d-%b-%Y'), run_arn)
+
+    print "" 
+
+  def reconcile_findings(self, details, run_arn):
     """
     Reconcile the findings from Amazon Inspector with Deep Security
     """
@@ -175,20 +193,20 @@ class Script(core.ScriptContext):
     self.dsm.computers.get()
     cves_in_ds = self.get_cves_in_ds()
     cves_in_inspector = {}
+    instances = {}
 
     # line up all of the runs and findings by instance
     for template_arn, template in details['templates'].items():
       runs = details['runs'].find(template=template_arn)
       # get the details for this run by instance
-      for run_arn in runs:
+      if run_arn in runs:
         self._log("Getting the details of run {}".format(run_arn))
-        instances = {}
         for finding_arn in details['findings'].find(run=run_arn):
           finding = details['findings'][finding_arn]
           instance_id = None
           if finding.has_key('assetAttributes') and finding['assetAttributes'].has_key('agentId'):
             instance_id = finding['assetAttributes']['agentId']
-            self._log("Instance {} has at least one findng".format(instance_id))
+            self._log("Instance {} has a finding: {}".format(instance_id, finding_arn))
           else:
             if 'did not find any potential security issues' in finding['description']:
               # no issues found
@@ -203,6 +221,10 @@ class Script(core.ScriptContext):
               instances[instance_id] = utilities.CoreDict()
               instances[instance_id]['findings'] = []
               instances[instance_id]['cves'] = []
+              instances[instance_id]['run_arn'] = run_arn
+              instances[instance_id]['run'] = details['runs'][run_arn]
+              instances[instance_id]['template_arn'] = template_arn
+              instances[instance_id]['template'] = details['templates'][template_arn]
               is_in_deepsecurity = self.dsm.computers.find(cloud_instance_id=instance_id)
               if len(is_in_deepsecurity) > 0: 
                 instances[instance_id]['ds_obj'] = self.dsm.computers[is_in_deepsecurity[0]]
@@ -241,10 +263,13 @@ class Script(core.ScriptContext):
 
     return results
 
-  def print_findings(self, details, dsm):
+  def print_results(self, results):
     """
+    Print the results for each instance
     """
-    dsm.computers.get()
+    print "\nRUN: {}".format(details['runs'][run_arn]['name'])
+    print "***********************************************************************"
+
 
     for template_arn, template in details['templates'].items():
       print template
