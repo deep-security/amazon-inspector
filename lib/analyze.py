@@ -27,7 +27,10 @@ def run_script(args):
     # List the available findings in Amazon Inspector
     script.connect()
     details = script.get_findings()
-    script.reconcile_findings(details)
+    if details:
+      results = script.reconcile_findings(details)
+
+      print results
 
     #script._log("***********************************************************************", priority=True)
     #script._log("* DRY RUN ENABLED. NO CHANGES WILL BE MADE", priority=True)
@@ -128,6 +131,23 @@ class Script(core.ScriptContext):
         for arn in v[arns_key]:
           results[k][arn] = None
 
+    # make sure we have the data required to proceed
+    enough_data_to_proceed = True
+    for k, v in arns.items():
+      if len(v) == 0:
+        self._log("No ARNs available for {}. Please start an assessment run in Amazon Inspector before running this tool".format(k), priority=True)
+        enough_data_to_proceed = False
+
+    for k, v in details.items():
+      if len(v) == 0:
+        self._log("No data available for any assessment {}. At least one assessment run must be finished for this tool to produce any results".format(k), priority=True)
+        enough_data_to_proceed = False
+
+    if not enough_data_to_proceed: 
+      # exit now
+      return None 
+
+    # map out the data structure
     for k, v in details.items():
       details_key = 'assessment{}'.format(k.capitalize())
       if k == 'findings': details_key = k
@@ -149,6 +169,8 @@ class Script(core.ScriptContext):
     """
     Reconcile the findings from Amazon Inspector with Deep Security
     """
+    results = {}
+
     self._log("Getting the latest data from Deep Security")
     self.dsm.computers.get()
     cves_in_ds = self.get_cves_in_ds()
@@ -159,16 +181,18 @@ class Script(core.ScriptContext):
       runs = details['runs'].find(template=template_arn)
       # get the details for this run by instance
       for run_arn in runs:
+        self._log("Getting the details of run {}".format(run_arn))
         instances = {}
         for finding_arn in details['findings'].find(run=run_arn):
           finding = details['findings'][finding_arn]
           instance_id = None
           if finding.has_key('assetAttributes') and finding['assetAttributes'].has_key('agentId'):
             instance_id = finding['assetAttributes']['agentId']
+            self._log("Instance {} has at least one findng".format(instance_id))
           else:
             if 'did not find any potential security issues' in finding['description']:
               # no issues found
-              pass
+              self._log("Positive confirmation of no issues found")
             else:
               # issues or error thrown
               pass # @TODO handle this edge case better
@@ -197,17 +221,25 @@ class Script(core.ScriptContext):
 
         # for each instance, let's figure out the mitigation for each CVE reported
         for instance_id, instance_details in instances.items():
+          results[instance_id] = {
+            'cves': {},
+            'is_active_in_deep_security': True if instance_details['ds_obj'] else False,
+            'has_intrusion_prevention_enabled_in_deep_security': True if instance_details['ds_obj'] and instance_details['ds_obj']['overall_intrusion_prevention_status'].lower() != 'off' else False,
+            'requires_mitigation': False,
+            }
           if len(instance_details['cves']) > 0: # this instance is impacts by one or more CVEs
             # can Deep Security protect against this CVE?
             print 'Instance {} is impacted by {} CVEs'.format(instance_id, len(instance_details['cves']))
             for cve_number in instance_details['cves']:
-              if cves_in_ds.has_key(cve_number):
-                print "IMMEDIATE Mitigation: Deep Security Intrusion Prevention rule: {}".format(self.dsm.rules['intrusion_prevention'][cves_in_ds[cve_number]]['name'])
-              
-              if cves_in_inspector.has_key(cve_number):
-                print "Mitigation: Suggested by Amazon Inspector: {}".format(cves_in_inspector[cve_number]['description'])
-              else:
-                print "Mitigation: See http://cve.mitre.org/cgi-bin/cvename.cgi?name={}".format(cve_number)
+              results[instance_id]['cves'][cve_number] = {
+                'immediate_mitigation_rule_id': cves_in_ds[cve_number] if cves_in_ds.has_key(cve_number) else None,
+                'immediate_mitigation': self.dsm.rules['intrusion_prevention'][cves_in_ds[cve_number]]['name'] if cves_in_ds.has_key(cve_number) else None,
+                'mitigation': cves_in_inspector[cve_number]['description'] if cves_in_inspector.has_key(cve_number) else 'http://cve.mitre.org/cgi-bin/cvename.cgi?name={}'.format(cve_number),
+              }
+
+          if len(results[instance_id]['cves']) > 0: results[instance_id]['requires_mitigation'] = True
+
+    return results
 
   def print_findings(self, details, dsm):
     """
