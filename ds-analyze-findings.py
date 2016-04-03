@@ -29,9 +29,9 @@ class Script(lib.core.ScriptContext):
   def __init__(self, command_to_run):
     self.command_to_run = command_to_run
     self.available_commands = {
-        'review': 
+        'analyze': 
           { 
-            'help': 'Review a set of Amazon Inspector findings',
+            'help': 'Analyze a set of Amazon Inspector findings',
             'cmd': lib.analyze.run_script,
           },
       }
