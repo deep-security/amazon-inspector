@@ -202,6 +202,7 @@ class Script(core.ScriptContext):
               # first time we've seen this instance
               instances[instance_id] = utilities.CoreDict()
               instances[instance_id]['findings'] = []
+              instances[instance_id]['cves'] = []
               is_in_deepsecurity = self.dsm.computers.find(cloud_instance_id=instance_id)
               if len(is_in_deepsecurity) > 0: 
                 instances[instance_id]['ds_obj'] = self.dsm.computers[is_in_deepsecurity[0]]
@@ -215,7 +216,6 @@ class Script(core.ScriptContext):
           if finding.has_key('attributes'):
             for kp in finding['attributes']:
               if kp['key'] == 'CVE_ID':
-                if not finding.has_key('cves'): instances[instance_id]['cves'] = []
                 instances[instance_id]['cves'].append(kp['value'])
                 cves_in_inspector[kp['value']] = finding
 
@@ -224,7 +224,7 @@ class Script(core.ScriptContext):
           results[instance_id] = {
             'cves': {},
             'is_active_in_deep_security': True if instance_details['ds_obj'] else False,
-            'has_intrusion_prevention_enabled_in_deep_security': True if instance_details['ds_obj'] and instance_details['ds_obj']['overall_intrusion_prevention_status'].lower() != 'off' else False,
+            'has_intrusion_prevention_enabled_in_deep_security': True if instance_details['ds_obj'] and instance_details['ds_obj'].overall_intrusion_prevention_status.lower() != 'off' else False,
             'requires_mitigation': False,
             }
           if len(instance_details['cves']) > 0: # this instance is impacts by one or more CVEs
