@@ -32,7 +32,7 @@ class Script(lib.core.ScriptContext):
         'review': 
           { 
             'help': 'Review a set of Amazon Inspector findings',
-            'cmd': lib.review.run_script,
+            'cmd': lib.analyze.run_script,
           },
       }
 
