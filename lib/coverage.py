@@ -26,6 +26,7 @@ def run_script(args):
   in_ds = script.get_cves_in_ds()
   coverage = script.compare_cves(in_inspector, in_ds)
   if script.args.print_cve_only:
+    coverage.sort()
     print "\n".join(coverage)
   else:
     script.print_coverage(coverage, in_inspector, in_ds)
