@@ -14,6 +14,7 @@ import netaddr
 # project libraries
 import lib.core
 import lib.analyze
+import lib.coverage
 
 def parse_args(str_to_parse=None):
   """
@@ -33,6 +34,11 @@ class Script(lib.core.ScriptContext):
           { 
             'help': 'Analyze a set of Amazon Inspector findings',
             'cmd': lib.analyze.run_script,
+          },
+        'coverage': 
+          { 
+            'help': 'Determine the coverage Deep Security has for Amazon Inspector findings',
+            'cmd': lib.coverage.run_script,
           },
       }
 
