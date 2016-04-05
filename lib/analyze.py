@@ -262,7 +262,7 @@ class Script(core.ScriptContext):
               results[instance_id]['cves'][cve_number] = {
                 'immediate_mitigation_rule_id': cves_in_ds[cve_number] if cves_in_ds.has_key(cve_number) else None,
                 'immediate_mitigation': self.dsm.rules['intrusion_prevention'][cves_in_ds[cve_number]]['name'] if cves_in_ds.has_key(cve_number) else None,
-                'mitigation': cves_in_inspector[cve_number]['description'] if cves_in_inspector.has_key(cve_number) else 'http://cve.mitre.org/cgi-bin/cvename.cgi?name={}'.format(cve_number),
+                'mitigation': cves_in_inspector[cve_number]['recommendation'] if cves_in_inspector.has_key(cve_number) else 'http://cve.mitre.org/cgi-bin/cvename.cgi?name={}'.format(cve_number),
               }
 
           if len(results[instance_id]['cves']) > 0 or len(results[instance_id]['other_findings']) > 0: results[instance_id]['requires_mitigation'] = True
@@ -286,3 +286,18 @@ class Script(core.ScriptContext):
           if instance:
             print "  There are {} findings related to known CVEs".format(len(instance['cves']))
             print "  ...and {} other findings".format(len(instance['other_findings']))
+
+            if instance['cves']:
+              for cve_number, cve in instance['cves'].items():
+                print "  * {}".format(cve_number)
+                if cve['immediate_mitigation_rule_id']:
+                  print "    !!! Should be mitigated immediately using Deep Security (rule '')".format(self.dsm.rules['intrusion_prevention'][cve['immediate_mitigation_rule_id']].name)
+
+                print "    Can be mitigated by taking the following action:\n\n      {}\n".format(cve['mitigation'])
+
+            if instance['other_findings']:
+              for finding in instance['other_findings']:
+                print "  * {}".format(finding['title'][0:150])
+                print "    Can be mitigated by taking the following action:\n\n      {}\n".format(finding['recommendation'].encode('ascii', 'ignore'))
+
+      print ""
