@@ -109,5 +109,3 @@ class Script(core.ScriptContext):
     coverage_percentage = (len(coverage)/len(in_inspector)) * 100
     print "{} ({:.2f}%) of the CVEs that Amazon Inspector looks for can be remotely mitigated by Deep Security".format(len(coverage), coverage_percentage)
     print ""
-    print "* Other CVEs covered by Deep Security include a number of platforms (including Windows) that are currently not covered by Amazon Inspector"
-    print ""
