@@ -12,10 +12,11 @@ Amazon Inspector was launched today at the AWS Summit in Chicago. We're finalizi
    - [coverage](#usage-coverage)
    - [analyze](#usage-analyze)
 - [SSL Certificate Validation](#ssl-certificate-validation)
+- [AWS Lambda](#lambda)
 
 <a name="usage" />
 
-### Usage
+## Usage
 
 The syntax for basic command line usage is available by using the ```--help``` switch.
 
@@ -170,3 +171,7 @@ And during execution you may see lines similar to;
 ```
 
 These are expected warnings. Can you tell that we (and the python core teams) are trying to tell you something? If you're interesting in using a valid SSL certificate, you can get one for free from [Let's Encrypt](https://letsencrypt.org), [AWS themselves](https://aws.amazon.com/certificate-manager/) (if your DSM is behind an ELB), or explore commercial options (like the [one from Trend Micro](http://www.trendmicro.com/us/enterprise/cloud-solutions/deep-security/ssl-certificates/)).
+
+<a name="lambda" />
+
+### AWS Lambda
