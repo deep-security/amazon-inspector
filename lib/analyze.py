@@ -18,7 +18,7 @@ def run_script(args):
   parser = core.get_arg_parser(prog='ds-analyze-findings analyze', add_help=True)
   parser.add_argument('-l', '--list', action='store_true', required=False, help='List the available Amazon Inspector assessment runs')
   parser.add_argument('--run-arn', action='store', dest='run_arn', required=False, help='Analyze the findings of this Amazon Inspector assessment run')
-  parser.add_argument('--mitigate', action='store_true', required=False, help='Mitigate Amazon Inspector findings when possible using Deep Security')
+  parser.add_argument('--mitigate', action='store_true', dest='mitigate', required=False, help='Mitigate Amazon Inspector findings when possible using Deep Security')
   #parser.add_argument('-i', '--id', action='store', dest="ip_list", required=False, help='Specify an IP List by ID within Deep Security as the source for the AWS WAF IP Set')
   
   script = Script(args[1:], parser)
@@ -31,6 +31,12 @@ def run_script(args):
     script.list_run_arns(details)
 
   elif script.args.run_arn:
+    if script.args.mitigate:
+      script._log("***********************************************************************", priority=True)
+      script._log("* Automatic mitigation is in final testing with the general release ", priority=True)
+      script._log("* and will be available shortly.", priority=True)
+      script._log("***********************************************************************", priority=True)
+
     script.connect()
     details = script.get_findings()
     if details:
