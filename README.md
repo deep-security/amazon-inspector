@@ -2,9 +2,9 @@
 
 Use Deep Security to mitigate remotely exploitable findings made by Amazon Inspector via the command line or AWS Lambda.
 
-**[19-Apr-2016 @ 10:15 CDT]**
+**[ 26-Apr-2016 @ 22:20 EDT ]**
 
-Amazon Inspector was launched today at the AWS Summit in Chicago. We're finalizing the testing of the code base and will have an update available shortly. Please check back often.
+We're in the final stages of doc and code review after the Amazon Inspector launch last week in Chicago. Look for final stage #1 code shortly.
 
 ## Index
 
