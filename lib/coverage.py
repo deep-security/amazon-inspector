@@ -68,7 +68,7 @@ class Script(core.ScriptContext):
     Get all of the findings and their associated data from Amazon Inspector
     """
     results = []
-
+    
     cve_url = 'https://s3-us-west-2.amazonaws.com/rules-engine/CVEList.txt'
 
     txt = None

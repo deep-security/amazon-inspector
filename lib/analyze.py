@@ -29,14 +29,7 @@ def run_script(args):
     script.connect()
     details = script.get_findings()
     script.list_run_arns(details)
-
   elif script.args.run_arn:
-    if script.args.mitigate:
-      script._log("***********************************************************************", priority=True)
-      script._log("* Automatic mitigation is in final testing with the general release ", priority=True)
-      script._log("* and will be available shortly.", priority=True)
-      script._log("***********************************************************************", priority=True)
-
     script.connect()
     details = script.get_findings()
     if details:
@@ -44,9 +37,13 @@ def run_script(args):
 
       if results: script.print_results(results, details)
 
-    #script._log("***********************************************************************", priority=True)
-    #script._log("* DRY RUN ENABLED. NO CHANGES WILL BE MADE", priority=True)
-    #script._log("***********************************************************************", priority=True)
+      if script.args.mitigate:
+        if script.args.dry_run:
+          script._log("***********************************************************************", priority=True)
+          script._log("* DRY RUN ENABLED. NO CHANGES WILL BE MADE", priority=True)
+          script._log("***********************************************************************", priority=True)
+
+        script.mitigate(results)
 
   script.clean_up()
 
@@ -307,3 +304,16 @@ class Script(core.ScriptContext):
                 print "    Can be mitigated by taking the following action:\n\n      {}\n".format(finding['recommendation'].encode('ascii', 'ignore'))
 
       print ""
+
+  def mitigate(self, details):
+    """
+    Mitigate any remotely exploitable CVEs using Deep Security
+    """
+    for instance_id, instance in results.items():
+      if instance and instance['cves']:
+        rules_for_instance = []
+        for cve_number, cve in instance['cves'].items():
+          if cve['immediate_mitigation_rule_id']:
+            rules_for_instance.append(cve['immediate_mitigation_rule_id'])
+
+        print ""
