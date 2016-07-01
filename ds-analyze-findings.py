@@ -9,7 +9,6 @@ import sys
 # 3rd party libraries
 import boto3
 import boto3.session
-import netaddr
 
 # project libraries
 import lib.core
