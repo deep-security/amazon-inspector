@@ -2,9 +2,17 @@
 
 Use Deep Security to mitigate remotely exploitable findings made by Amazon Inspector via the command line or AWS Lambda.
 
-**[ 26-Apr-2016 @ 22:20 EDT ]**
+## Status
 
-We're in the final stages of doc and code review after the Amazon Inspector launch last week in Chicago. Look for final stage #1 code shortly.
+[ 29-Aug-2016 ] After a period of inactivity since the launch. You can expect a number of updates to this repository leading up to AWS re:Invent 2016.
+
+## Support
+
+This is a community project and while you will see contributions from the Deep Security team, there is no official Trend Micro support for this project. The official documentation for the Deep Security APIs is available from the [Trend Micro Online Help Centre](http://docs.trendmicro.com/en-us/enterprise/deep-security.aspx). 
+
+Tutorials, feature-specific help, and other information about Deep Security is available from the [Deep Security Help Center](https://help.deepsecurity.trendmicro.com/Welcome.html). 
+
+For Deep Security specific issues, please use the regular Trend Micro support channels. For issues with the code in this repository, please [open an issue here on GitHub](https://github.com/deep-security/deep-security-py-preview/issues).
 
 ## Index
 
