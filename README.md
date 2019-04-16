@@ -2,27 +2,17 @@
 
 Use Deep Security to mitigate remotely exploitable findings made by Amazon Inspector via the command line or AWS Lambda.
 
-## Status
 
-[ 29-Aug-2016 ] After a period of inactivity since the launch. You can expect a number of updates to this repository leading up to AWS re:Invent 2016.
+## Table of Contents
 
-## Support
+* [Usage](#usage)
+   * [coverage](#usage-coverage)
+   * [analyze](#usage-analyze)
+   * [SSL Certificate Validation](#ssl-certificate-validation)
+   * [AWS Lambda](#aws-lambda)
+* [Support](#support)
+* [Contribute](#contribute)
 
-This is a community project and while you will see contributions from the Deep Security team, there is no official Trend Micro support for this project. The official documentation for the Deep Security APIs is available from the [Trend Micro Online Help Centre](http://docs.trendmicro.com/en-us/enterprise/deep-security.aspx). 
-
-Tutorials, feature-specific help, and other information about Deep Security is available from the [Deep Security Help Center](https://help.deepsecurity.trendmicro.com/Welcome.html). 
-
-For Deep Security specific issues, please use the regular Trend Micro support channels. For issues with the code in this repository, please [open an issue here on GitHub](https://github.com/deep-security/amazon-inspector/issues).
-
-## Index
-
-- [Usage](#usage)
-   - [coverage](#usage-coverage)
-   - [analyze](#usage-analyze)
-- [SSL Certificate Validation](#ssl-certificate-validation)
-- [AWS Lambda](#lambda)
-
-<a name="usage" />
 
 ## Usage
 
@@ -112,7 +102,7 @@ python ds-analyze-findings.py coverage -u WAF -p PASSWORD -t TENANT -l
 python ds-analyze-findings.py coverage -u WAF -p PASSWORD -d DSM_HOSTNAME --ignore-ssl-validation -l
 ```
 
-This will generate output along the lines of;
+This will generate output like:
 
 ```
 ***********************************************************************
@@ -125,7 +115,7 @@ Deep Security's intrusion prevention rule set currently looks for 5076 CVEs
 
 ```
 
-You can also use the ```--print-cve-only``` switch to generate a list of CVEs that fall under the coverage of both Amazon Inspector and Deep Security. That generates output along the lines of;
+You can also use the ```--print-cve-only``` switch to generate a list of CVEs that fall under the coverage of both Amazon Inspector and Deep Security. That generates output like:
 
 ```
 CVE-2009-2693
@@ -145,17 +135,16 @@ CVE-2015-5722
 ### analyze
 
 
-<a name="ssl-certificate-validation" />
 
-## SSL Certificate Validation
+### SSL Certificate Validation
 
-If the Deep Security Manager (DSM) you're connecting to was installed via software of the AWS Marketplace, there's a chance that it is still using the default, self-signed SSL certificate. By default, python checks the certificate for validity which it cannot do with self-signed certificates.
+If the Deep Security Manager you're connecting to was installed via software in AWS Marketplace, it might be using the default, self-signed SSL certificate. By default, Python checks the certificate for validity. Validation fails with self-signed certificates.
 
 If you are using self-signed certificates, please use the new ```--ignore-ssl-validation``` command line flag.
 
-When you use this flag, you're telling python to ignore any certificate warnings. These warnings should be due to the self-signed certificate but *could* be for other reasons. It is strongly recommended that you have alternative mitigations in place to secure your DSM. 
+When you use this flag, you're telling python to ignore any certificate warnings. These warnings should be due to the self-signed certificate but *could* be for other reasons. It is strongly recommended that you have alternative mitigations in place to secure your Deep Security Manager. 
 
-When the flag is set, you'll see this warning block;
+When the flag is set, you'll see this warning:
 
 ```bash
 ***********************************************************************
@@ -178,8 +167,31 @@ And during execution you may see lines similar to;
 .../requests/packages/urllib3/connectionpool.py:789: InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.org/en/latest/security.html
 ```
 
-These are expected warnings. Can you tell that we (and the python core teams) are trying to tell you something? If you're interesting in using a valid SSL certificate, you can get one for free from [Let's Encrypt](https://letsencrypt.org), [AWS themselves](https://aws.amazon.com/certificate-manager/) (if your DSM is behind an ELB), or explore commercial options (like the [one from Trend Micro](http://www.trendmicro.com/us/enterprise/cloud-solutions/deep-security/ssl-certificates/)).
+These are expected warnings. Can you tell that we (and the Python core teams) are trying to tell you something? If you're interesting in using a valid SSL certificate, you can get one for free from [Let's Encrypt](https://letsencrypt.org), [AWS themselves](https://aws.amazon.com/certificate-manager/) (if your DSM is behind an ELB), or explore commercial options (like the [one from Trend Micro](http://www.trendmicro.com/us/enterprise/cloud-solutions/deep-security/ssl-certificates/)).
 
-<a name="lambda" />
 
 ### AWS Lambda
+
+## Support
+
+This is an Open Source community project. Project contributors may be able to help, 
+depending on their time and availability. Please be specific about what you're 
+trying to do, your system, and steps to reproduce the problem.
+
+For bug reports or feature requests, please 
+[open an issue](../issues). 
+You are welcome to [contribute](#contribute).
+
+Official support from Trend Micro is not available. Individual contributors may be 
+Trend Micro employees, but are not official support.
+
+## Contribute
+
+We accept contributions from the community. To submit changes:
+
+1. Fork this repository.
+1. Create a new feature branch.
+1. Make your changes.
+1. Submit a pull request with an explanation of your changes or additions.
+
+We will review and work with you to release the code.
